@@ -1,0 +1,33 @@
+databaseChangeLog:
+  - changeSet:
+      id: '1741881146279-1'
+      author: 'st4s1k'
+      preConditions:
+        - not:
+            - tableExists:
+                tableName: client
+      changes:
+        - createTable:
+            tableName: client
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: client_id_pk
+              - column:
+                  name: username
+                  type: varchar2(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  constraints:
+                    nullable: false
+                  name: first_name
+                  type: varchar2(100)
+              - column:
+                  name: last_name
+                  type: varchar2(100)

@@ -1,0 +1,38 @@
+spring:
+  application:
+    name: Red Coconut
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    username: ${POSTGRES_USER}
+    url: ${POSTGRES_DB_HOST}/red_coconut
+    password: ${POSTGRES_PASSWORD}
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+    show-sql: false
+
+  data:
+    rest:
+      base-path: /api
+      default-page-size: 25
+      max-page-size: 100
+      return-body-on-create: true
+      return-body-on-update: true
+
+logging:
+  level:
+    org:
+      springframework:
+        web: TRACE
+        security: TRACE
