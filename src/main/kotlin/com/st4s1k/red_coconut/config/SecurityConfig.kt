@@ -11,13 +11,19 @@ import org.springframework.security.web.SecurityFilterChain
 class SecurityConfig {
 
     @Bean
-    fun securityFilterChain(http: HttpSecurity): SecurityFilterChain = http
-        .authorizeHttpRequests {
-            it.requestMatchers("/login/**").permitAll()
-            it.anyRequest().authenticated()
-        }
-        .csrf { it.disable() }
-        .oauth2Login(withDefaults())
-        .build()
+    fun securityFilterChain(
+        http: HttpSecurity,
+        cognitoLogoutHandler: CognitoLogoutHandler
+    ): SecurityFilterChain {
+        return http
+            .csrf { it.disable() }
+            .authorizeHttpRequests {
+                it.requestMatchers("/login/**").permitAll()
+                it.anyRequest().authenticated()
+            }
+            .oauth2Login(withDefaults())
+            .logout { it.logoutSuccessHandler(cognitoLogoutHandler) }
+            .build()
+    }
 
 }

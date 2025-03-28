@@ -1,14 +1,35 @@
+app:
+  cognito:
+    client-id: "${AWS_COGNITO_CLIENT_ID}"
+    logout-uri: "${AWS_COGNITO_LOGOUT_URI}"
+    logout-redirect-uri: "http://localhost:8080/login"
+
 spring:
   application:
     name: Red Coconut
+
+  cloud:
+    aws:
+      region:
+        static: "${AWS_REGION}"
+      credentials:
+        access-key: "${AWS_ACCESS_KEY_ID}"
+        secret-key: "${AWS_SECRET_ACCESS_KEY}"
 
   security:
     oauth2:
       client:
         registration:
-          google:
-            client-id: ${GOOGLE_CLIENT_ID}
-            client-secret: ${GOOGLE_CLIENT_SECRET}
+          cognito:
+            client-id: "${AWS_COGNITO_CLIENT_ID}"
+            client-secret: "${AWS_COGNITO_CLIENT_SECRET}"
+            scope:
+              - phone
+              - openid
+              - email
+        provider:
+          cognito:
+            issuer-uri: "${AWS_COGNITO_ISSUER_URI}"
 
   datasource:
     driver-class-name: org.postgresql.Driver
@@ -36,3 +57,6 @@ logging:
       springframework:
         web: TRACE
         security: TRACE
+    io:
+      awspring:
+        cloud: TRACE
