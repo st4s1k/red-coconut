@@ -32,10 +32,18 @@ spring:
             issuer-uri: "${AWS_COGNITO_ISSUER_URI}"
 
   datasource:
+    url: "${POSTGRES_DB_HOST}/red_coconut"
+    username: "${POSTGRES_USER}"
+    password: "${POSTGRES_PASSWORD}"
     driver-class-name: org.postgresql.Driver
-    username: ${POSTGRES_USER}
-    url: ${POSTGRES_DB_HOST}/red_coconut
-    password: ${POSTGRES_PASSWORD}
+    hikari:
+      connection-timeout: 30000 # Maximum wait for a connection from the pool (milliseconds)
+      minimum-idle: 5 # Minimum number of idle connections in the pool
+      maximum-pool-size: 15 # Maximum number of connections in the pool
+      idle-timeout: 600000 # Maximum idle time for connections (milliseconds)
+      max-lifetime: 1800000 # Maximum lifetime of a connection in the pool (milliseconds)
+      pool-name: HikariCP # Name of the connection pool
+      initialization-fail-timeout: -1 # Timeout to wait for a connection to be established (milliseconds), -1 means indefinite
 
   jpa:
     hibernate:
