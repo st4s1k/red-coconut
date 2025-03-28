@@ -1,4 +1,6 @@
 app:
+  s3:
+    bucket-name: "${AWS_S3_BUCKET_NAME}"
   cognito:
     client-id: "${AWS_COGNITO_CLIENT_ID}"
     logout-uri: "${AWS_COGNITO_LOGOUT_URI}"

@@ -1,0 +1,13 @@
+@JSESSIONID=A7335F8BC911C099B4D481AE01447971
+
+### Upload File
+POST http://localhost:8080/api/files/upload
+Cookie: JSESSIONID={{JSESSIONID}}
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="file"; filename="user-controller.http"
+Content-Type: text/plain
+
+< ./client-controller.http
+--boundary--
