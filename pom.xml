@@ -32,6 +32,7 @@
 		<spring-cloud-aws-dependencies.version>3.3.0</spring-cloud-aws-dependencies.version>
 		<awssdk-bom.version>2.31.3</awssdk-bom.version>
 		<kotlin-logging-jvm.version>7.0.5</kotlin-logging-jvm.version>
+		<openapi-generator.version>7.2.0</openapi-generator.version>
 	</properties>
 	<dependencies>
 	    <!-- Kotlin dependencies -->
@@ -124,6 +125,36 @@
 			<groupId>io.awspring.cloud</groupId>
 			<artifactId>spring-cloud-aws-starter-s3</artifactId>
 		</dependency>
+
+		<!-- API Documentation -->
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+			<version>2.4.0</version>
+		</dependency>
+
+		<!-- Actuator for health checks -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+
+		<!-- OpenAPI -->
+		<dependency>
+			<groupId>org.openapitools</groupId>
+			<artifactId>openapi-generator</artifactId>
+			<version>${openapi-generator.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>io.swagger.core.v3</groupId>
+			<artifactId>swagger-annotations</artifactId>
+			<version>2.2.20</version>
+		</dependency>
+		<dependency>
+			<groupId>org.openapitools</groupId>
+			<artifactId>jackson-databind-nullable</artifactId>
+			<version>0.2.6</version>
+		</dependency>
 	</dependencies>
 
 	<dependencyManagement>
@@ -185,6 +216,32 @@
 						<version>${kotlin.version}</version>
 					</dependency>
 				</dependencies>
+			</plugin>
+			<!-- OpenAPI Generator -->
+			<plugin>
+				<groupId>org.openapitools</groupId>
+				<artifactId>openapi-generator-maven-plugin</artifactId>
+				<version>${openapi-generator.version}</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>generate</goal>
+						</goals>
+						<configuration>
+							<inputSpec>${project.basedir}/src/main/resources/openapi/api.yaml</inputSpec>
+							<generatorName>kotlin-spring</generatorName>
+							<apiPackage>com.st4s1k.red_coconut.api</apiPackage>
+							<modelPackage>com.st4s1k.red_coconut.model</modelPackage>
+							<supportingFilesToGenerate>ApiUtil.kt</supportingFilesToGenerate>
+							<configOptions>
+								<interfaceOnly>true</interfaceOnly>
+								<delegatePattern>true</delegatePattern>
+								<serializationLibrary>jackson</serializationLibrary>
+								<useSpringBoot3>true</useSpringBoot3>
+							</configOptions>
+						</configuration>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>

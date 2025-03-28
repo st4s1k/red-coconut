@@ -1,0 +1,238 @@
+openapi: 3.0.3
+info:
+  title: Red Coconut API
+  description: File Storage Service API
+  version: 1.0.0
+  contact:
+    name: Red Coconut Team
+    email: contact@example.com
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+paths:
+  /api/files/upload:
+    post:
+      summary: Upload a file
+      operationId: uploadFile
+      tags:
+        - Files
+      security:
+        - oauth2: []
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: File uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileUploadResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/files/status/{uploadId}:
+    get:
+      summary: Get upload status
+      operationId: getUploadStatus
+      tags:
+        - Files
+      parameters:
+        - name: uploadId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Upload status retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadStatusResponse'
+        '404':
+          description: Upload not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/files/download/{filePath}:
+    get:
+      summary: Download a file
+      operationId: downloadFile
+      tags:
+        - Files
+      security:
+        - oauth2: []
+      parameters:
+        - name: filePath
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: File content
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/users/me:
+    get:
+      summary: Get current user information
+      operationId: getCurrentUser
+      tags:
+        - Users
+      security:
+        - oauth2: []
+      responses:
+        '200':
+          description: Current user identifier
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/health:
+    get:
+      summary: Get service health status
+      operationId: healthCheck
+      tags:
+        - System
+      responses:
+        '200':
+          description: Health status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+components:
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      flows:
+        implicit:
+          authorizationUrl: https://example.com/oauth/authorize
+          scopes:
+            read: Read access
+            write: Write access
+  schemas:
+    FileUploadResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: object
+          properties:
+            fileUrl:
+              type: string
+            uploadId:
+              type: string
+            fileName:
+              type: string
+            size:
+              type: integer
+              format: int64
+    UploadStatusResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+            fileName:
+              type: string
+            status:
+              type: string
+              enum: [IN_PROGRESS, COMPLETED, FAILED]
+            totalBytes:
+              type: integer
+              format: int64
+            bytesUploaded:
+              type: integer
+              format: int64
+            percentComplete:
+              type: integer
+            fileUri:
+              type: string
+              nullable: true
+            errorMessage:
+              type: string
+              nullable: true
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          default: false
+        message:
+          type: string
+        errorCode:
+          type: string
+          nullable: true
+    HealthResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: object
+          properties:
+            status:
+              type: string
+            components:
+              type: object
+              additionalProperties:
+                type: object
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'

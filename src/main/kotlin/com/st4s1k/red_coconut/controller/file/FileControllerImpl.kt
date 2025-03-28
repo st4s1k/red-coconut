@@ -1,8 +1,9 @@
 package com.st4s1k.red_coconut.controller.file
 
-import com.st4s1k.red_coconut.controller.api.ApiResponse
-import com.st4s1k.red_coconut.controller.api.FileUploadResponse
-import com.st4s1k.red_coconut.controller.api.UploadStatusResponse
+import com.st4s1k.red_coconut.api.FilesApi
+import com.st4s1k.red_coconut.model.ErrorResponse
+import com.st4s1k.red_coconut.model.FileUploadResponse
+import com.st4s1k.red_coconut.model.UploadStatusResponse
 import com.st4s1k.red_coconut.service.FileService
 import com.st4s1k.red_coconut.service.auth.AuthenticationService
 import com.st4s1k.red_coconut.util.UploadUtils
@@ -13,29 +14,18 @@ import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.oauth2.core.user.OAuth2User
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.multipart.MultipartFile
 import org.springframework.web.server.ResponseStatusException
+import java.nio.file.Files
 
-/**
- * Controller for file operations.
- */
 @RestController
-@RequestMapping("/api/files")
-class FileController(
+class FileControllerImpl(
     private val fileService: FileService,
     private val authService: AuthenticationService
-) {
-    @PostMapping("/upload")
-    fun upload(
-        @AuthenticationPrincipal principal: OAuth2User,
-        @RequestParam("file") file: MultipartFile
-    ): ResponseEntity<ApiResponse.Success<FileUploadResponse>> {
+) : FilesApi {
+
+    override fun uploadFile(file: MultipartFile, principal: OAuth2User): ResponseEntity<FileUploadResponse> {
         // Get user identifier
         val userIdentifier = authService.getUserIdentifier(principal)
             ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid user identity")
@@ -51,33 +41,34 @@ class FileController(
             UploadUtils.createProgressListener(progress)
         )
 
-        // Create response
-        val response = FileUploadResponse(
+        // Create response data
+        val responseData = FileUploadResponse.Data(
             fileUrl = fileUri.toString(),
             uploadId = uploadId,
             fileName = file.originalFilename ?: "unknown",
             size = file.size
         )
 
-        return ResponseEntity
-            .created(fileUri)
-            .body(
-                ApiResponse.Success(
-                    message = "File uploaded successfully",
-                    data = response
-                )
-            )
+        // Create response
+        val response = FileUploadResponse(
+            success = true,
+            message = "File uploaded successfully",
+            data = responseData
+        )
+
+        return ResponseEntity.created(fileUri).body(response)
     }
 
-    @GetMapping("/status/{uploadId}")
-    fun getUploadStatus(
-        @PathVariable uploadId: String
-    ): ResponseEntity<ApiResponse> {
+    override fun getUploadStatus(uploadId: String): ResponseEntity<Any> {
         val progress = UploadUtils.getProgress(uploadId)
             ?: return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ApiResponse.Error(message = "Upload not found"))
+                .body(ErrorResponse(
+                    success = false,
+                    message = "Upload not found",
+                    errorCode = "NOT_FOUND"
+                ))
 
-        val response = UploadStatusResponse(
+        val responseData = UploadStatusResponse.Data(
             id = progress.id,
             fileName = progress.fileName,
             status = progress.status.name,
@@ -88,19 +79,16 @@ class FileController(
             errorMessage = progress.errorMessage
         )
 
-        return ResponseEntity.ok(
-            ApiResponse.Success(
-                message = "Upload status retrieved",
-                data = response
-            )
+        val response = UploadStatusResponse(
+            success = true,
+            message = "Upload status retrieved",
+            data = responseData
         )
+
+        return ResponseEntity.ok(response)
     }
 
-    @GetMapping("/download/{filePath:.+}")
-    fun downloadFile(
-        @AuthenticationPrincipal principal: OAuth2User,
-        @PathVariable filePath: String
-    ): ResponseEntity<Resource> {
+    override fun downloadFile(filePath: String, principal: OAuth2User): ResponseEntity<Resource> {
         // Get user identifier
         val userIdentifier = authService.getUserIdentifier(principal)
             ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid user identity")

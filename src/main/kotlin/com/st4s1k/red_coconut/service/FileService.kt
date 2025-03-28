@@ -1,48 +1,85 @@
 package com.st4s1k.red_coconut.service
 
-import com.st4s1k.red_coconut.config.S3Properties
-import io.awspring.cloud.s3.S3Resource
-import io.awspring.cloud.s3.S3Template
+import com.st4s1k.red_coconut.service.storage.StorageException
+import com.st4s1k.red_coconut.service.storage.StorageService
+import com.st4s1k.red_coconut.service.storage.UploadProgressListener
+import com.st4s1k.red_coconut.util.PathUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
+import org.springframework.core.io.Resource
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
+import java.net.URI
 
+/**
+ * Service for handling file operations.
+ * Uses the StorageService interface for storage operations.
+ */
 @Service
 class FileService(
-    private val s3Properties: S3Properties,
-    private val s3Template: S3Template
+    private val storageService: StorageService
 ) {
     companion object {
         private val log = KotlinLogging.logger {}
     }
 
-    fun upload(
-        multipartFile: MultipartFile,
-        email: String?
-    ): S3Resource? {
-        if (email.isNullOrBlank()) {
-            log.error { "Email is null or blank, cannot upload file" }
-            return null
-        }
+    /**
+     * Uploads a file to the storage system
+     *
+     * @param file The file to upload
+     * @param userIdentifier Identifier for the user (typically email)
+     * @param listener Optional listener for tracking progress updates
+     * @return URI for the uploaded file
+     * @throws IllegalArgumentException if userIdentifier is blank
+     * @throws StorageException if the upload fails
+     */
+    fun uploadFile(
+        file: MultipartFile,
+        userIdentifier: String?,
+        listener: UploadProgressListener? = null
+    ): URI {
+        require(!userIdentifier.isNullOrBlank()) { "User identifier cannot be null or blank" }
 
-        val key = buildKey(multipartFile.originalFilename, email)
+        val sanitizedFilename = PathUtils.sanitizeFilename(file.originalFilename)
+        val path = PathUtils.buildFilePath(sanitizedFilename, userIdentifier)
 
-        multipartFile.inputStream.use { inputStream ->
-            return s3Template.upload(s3Properties.bucketName, key, inputStream).also {
-                log.info { "File uploaded: '$key'" }
-            }
+        log.info { "Starting upload for '$sanitizedFilename' (${file.size} bytes) to path '$path'" }
+
+        try {
+            val uri = storageService.upload(file, path, listener)
+            log.info { "File uploaded successfully to '$path'" }
+            return uri
+        } catch (e: Exception) {
+            log.error(e) { "Failed to upload file '$sanitizedFilename' to '$path'" }
+            if (e is StorageException) throw e
+            throw StorageException("Failed to upload file", e)
         }
     }
 
-    private fun buildKey(
-        originalFilename: String?,
-        email: String
-    ): String {
-        val formattedDateTime = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss")
-        val dateTime = formattedDateTime.format(LocalDateTime.now())
-        val filename = originalFilename ?: "file-${dateTime}"
-        return "$email/$filename"
+    /**
+     * Downloads a file from the storage system
+     *
+     * @param filePath The path to the file in storage
+     * @param userIdentifier Identifier for the user (typically email)
+     * @return Resource for the downloaded file
+     * @throws IllegalArgumentException if userIdentifier is blank
+     * @throws StorageException if the download fails
+     */
+    fun downloadFile(filePath: String, userIdentifier: String?): Resource {
+        require(!userIdentifier.isNullOrBlank()) { "User identifier cannot be null or blank" }
+        
+        // Security check - ensure the user can only access their own files
+        if (!filePath.startsWith("$userIdentifier/")) {
+            throw SecurityException("Access denied to file: $filePath")
+        }
+
+        log.info { "Downloading file: $filePath" }
+        
+        try {
+            return storageService.download(filePath)
+        } catch (e: Exception) {
+            log.error(e) { "Failed to download file: $filePath" }
+            if (e is StorageException) throw e
+            throw StorageException("Failed to download file", e)
+        }
     }
 }

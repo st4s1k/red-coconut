@@ -1,22 +1,18 @@
 package com.st4s1k.red_coconut.controller.user
 
+import com.st4s1k.red_coconut.api.UsersApi
 import com.st4s1k.red_coconut.service.auth.AuthenticationService
+import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.oauth2.core.user.OAuth2User
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
-/**
- * Controller for user operations.
- */
 @RestController
-@RequestMapping("/api/users")
-class UserController(
+class UserControllerImpl(
     private val authService: AuthenticationService
-) {
-    @GetMapping("/me")
-    fun getCurrentUser(
-        @AuthenticationPrincipal principal: OAuth2User
-    ): String? = authService.getUserIdentifier(principal)
+) : UsersApi {
+
+    override fun getCurrentUser(principal: OAuth2User): ResponseEntity<String> {
+        return ResponseEntity.ok(authService.getUserIdentifier(principal))
+    }
 }
