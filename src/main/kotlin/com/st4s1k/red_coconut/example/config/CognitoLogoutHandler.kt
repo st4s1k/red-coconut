@@ -1,7 +1,8 @@
-package com.st4s1k.red_coconut.config
+package com.st4s1k.red_coconut.example.config
 
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.core.Authentication
 import org.springframework.security.web.authentication.logout.SimpleUrlLogoutSuccessHandler
 import org.springframework.stereotype.Component
@@ -11,18 +12,23 @@ import java.nio.charset.StandardCharsets
 
 @Component
 class CognitoLogoutHandler(
-    private val cognitoProperties: CognitoProperties
+    @Value("\${AWS_COGNITO_LOGOUT_URI:undefined}")
+    private val logoutUri: String,
+    @Value("\${AWS_COGNITO_CLIENT_ID:undefined}")
+    private val clientId: String,
+    @Value("\${AWS_COGNITO_LOGOUT_REDIRECT_URI:undefined}")
+    private val logoutRedirectUri: String
 ) : SimpleUrlLogoutSuccessHandler() {
 
     override fun determineTargetUrl(
-        request: HttpServletRequest?,
-        response: HttpServletResponse?,
+        request: HttpServletRequest,
+        response: HttpServletResponse,
         authentication: Authentication?
     ): String {
         return UriComponentsBuilder
-            .fromUri(URI.create(cognitoProperties.logoutUri))
-            .queryParam("client_id", cognitoProperties.clientId)
-            .queryParam("logout_uri", cognitoProperties.logoutRedirectUri)
+            .fromUri(URI.create(logoutUri))
+            .queryParam("client_id", clientId)
+            .queryParam("logout_uri", logoutRedirectUri)
             .encode(StandardCharsets.UTF_8)
             .build()
             .toUriString()

@@ -1,0 +1,33 @@
+@JSESSIONID=13B348D5FC46B5DFDE28C25D1E5AB5CD
+
+### Upload File
+POST http://localhost:8080/api/files/upload
+Cookie: JSESSIONID={{JSESSIONID}}
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="file"; filename="file-controller.http"
+Content-Type: text/plain
+
+< ./file-controller.http
+--boundary--
+
+### Get Upload Status
+@uploadId=1234567890
+GET http://localhost:8080/api/files/status/{{uploadId}}
+Cookie: JSESSIONID={{JSESSIONID}}
+
+### File name
+@fileName=file-controller.http
+
+### Download File
+GET http://localhost:8080/api/files/download?fileName={{fileName}}
+Cookie: JSESSIONID={{JSESSIONID}}
+
+### Check File Exists
+GET http://localhost:8080/api/files/exists?fileName={{fileName}}
+Cookie: JSESSIONID={{JSESSIONID}}
+
+### Delete File
+DELETE http://localhost:8080/api/files/delete?fileName={{fileName}}
+Cookie: JSESSIONID={{JSESSIONID}}

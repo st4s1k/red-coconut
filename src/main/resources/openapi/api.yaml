@@ -1,0 +1,263 @@
+openapi: 3.0.3
+
+info:
+  title: Red Coconut API
+  description: File Storage Service API
+  version: 1.0.0
+  contact:
+    name: Red Coconut Team
+    email: contact@example.com
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+
+tags:
+  - name: file-controller
+    description: Endpoints for file upload, download, and status
+  - name: user-controller
+    description: Endpoints for user account operations
+
+paths:
+  /api/files/upload:
+    post:
+      summary: Upload a file
+      operationId: upload
+      tags:
+        - file-controller
+      security:
+        - oauth2: [ ]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: File uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileUploadResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/files/status/{uploadId}:
+    get:
+      summary: Get upload status
+      operationId: getUploadStatus
+      tags:
+        - file-controller
+      parameters:
+        - name: uploadId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Upload status retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadStatusResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/files/download/{filePath}:
+    get:
+      summary: Download a file
+      operationId: downloadFile
+      tags:
+        - file-controller
+      security:
+        - oauth2: [ ]
+      parameters:
+        - name: filePath
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: File content
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/files/exists/{filePath}:
+    get:
+      summary: Check if a file exists
+      operationId: checkFileExists
+      tags:
+        - file-controller
+      parameters:
+        - name: filePath
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: File existence status
+          content:
+            application/json:
+              schema:
+                type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/files/delete/{filePath}:
+    delete:
+      summary: Delete a file
+      operationId: deleteFile
+      tags:
+        - file-controller
+      security:
+        - oauth2: [ ]
+      parameters:
+        - name: filePath
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: File deleted successfully
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/users/me:
+    get:
+      summary: Get current user information
+      operationId: getCurrentUser
+      tags:
+        - user-controller
+      security:
+        - oauth2: [ ]
+      responses:
+        '200':
+          description: Current user identifier
+          content:
+            application/json:
+              schema:
+                type: string
+                additionalProperties:
+                  type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+
+components:
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      flows:
+        implicit:
+          authorizationUrl: https://example.com/oauth/authorize
+          scopes:
+            read: Read access
+            write: Write access
+
+  schemas:
+    FileUploadResponse:
+      type: object
+      properties:
+        fileUrl:
+          type: string
+        uploadId:
+          type: string
+        fileName:
+          type: string
+        size:
+          type: integer
+          format: int64
+
+    UploadStatusResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        fileName:
+          type: string
+        status:
+          type: string
+          enum: [ IN_PROGRESS, COMPLETED, FAILED ]
+        totalBytes:
+          type: integer
+          format: int64
+        bytesUploaded:
+          type: integer
+          format: int64
+        percentComplete:
+          type: integer
+        fileUri:
+          type: string
+          nullable: true
+        errorMessage:
+          type: string
+          nullable: true
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          default: false
+        message:
+          type: string
+        errorCode:
+          type: string
+          nullable: true
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'

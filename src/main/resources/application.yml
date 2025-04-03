@@ -1,70 +1,21 @@
-app:
-  cognito:
-    client-id: "${AWS_COGNITO_CLIENT_ID}"
-    logout-uri: "${AWS_COGNITO_LOGOUT_URI}"
-    logout-redirect-uri: "http://localhost:8080/login"
-
 spring:
   application:
     name: Red Coconut
 
-  cloud:
-    aws:
-      region:
-        static: "${AWS_REGION}"
-      credentials:
-        access-key: "${AWS_ACCESS_KEY_ID}"
-        secret-key: "${AWS_SECRET_ACCESS_KEY}"
+  # Multipart file upload configuration
+  servlet:
+    multipart:
+      max-file-size: ${MAX_FILE_SIZE:10GB}
+      max-request-size: ${MAX_REQUEST_SIZE:10GB}
+      resolve-lazily: true
 
-  security:
-    oauth2:
-      client:
-        registration:
-          cognito:
-            client-id: "${AWS_COGNITO_CLIENT_ID}"
-            client-secret: "${AWS_COGNITO_CLIENT_SECRET}"
-            scope:
-              - phone
-              - openid
-              - email
-        provider:
-          cognito:
-            issuer-uri: "${AWS_COGNITO_ISSUER_URI}"
-
-  datasource:
-    url: "${POSTGRES_DB_HOST}/red_coconut"
-    username: "${POSTGRES_USER}"
-    password: "${POSTGRES_PASSWORD}"
-    driver-class-name: org.postgresql.Driver
-    hikari:
-      connection-timeout: 30000 # Maximum wait for a connection from the pool (milliseconds)
-      minimum-idle: 5 # Minimum number of idle connections in the pool
-      maximum-pool-size: 15 # Maximum number of connections in the pool
-      idle-timeout: 600000 # Maximum idle time for connections (milliseconds)
-      max-lifetime: 1800000 # Maximum lifetime of a connection in the pool (milliseconds)
-      pool-name: HikariCP # Name of the connection pool
-      initialization-fail-timeout: -1 # Timeout to wait for a connection to be established (milliseconds), -1 means indefinite
-
-  jpa:
-    hibernate:
-      ddl-auto: none
-    open-in-view: false
-    show-sql: false
-
-  data:
-    rest:
-      base-path: /api
-      default-page-size: 25
-      max-page-size: 100
-      return-body-on-create: true
-      return-body-on-update: true
-
-logging:
-  level:
-    org:
-      springframework:
-        web: TRACE
-        security: TRACE
-    io:
-      awspring:
-        cloud: TRACE
+red-coconut:
+  storage:
+    # Location: a bucket name for cloud storage or directory path for local storage
+    location: ${STORAGE_LOCATION:tmp}
+    # Whether to use chunked uploads for large files
+    use-chunked-uploads: ${STORAGE_USE_CHUNKED:true}
+    # Size threshold for chunked uploads (default: 100MB)
+    chunk-threshold: ${STORAGE_CHUNK_THRESHOLD:104857600}
+    # Size of each chunk (default: 10MB)
+    chunk-size: ${STORAGE_CHUNK_SIZE:10485760}
